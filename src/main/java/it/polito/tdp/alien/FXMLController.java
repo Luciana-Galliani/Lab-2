@@ -5,7 +5,7 @@
 package it.polito.tdp.alien;
 
 import java.net.URL;
-import java.util.ResourceBundle;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -14,8 +14,8 @@ import javafx.scene.control.TextField;
 import java.util.*; //per la mappa
 
 public class FXMLController {
-	//attributi
-	TreeMap<String, String> dizionarioAlieno= new TreeMap<String, String>();
+	//
+	TreeMap<String, LinkedList<String>> dizionarioAlieno= new TreeMap<String, LinkedList<String>>();
 	boolean checkNumero= false;
 	boolean checkNumero2= false;
 	//
@@ -40,43 +40,97 @@ public class FXMLController {
 
     @FXML
     void doClear(ActionEvent event) {
-
+    	
+    	this.txtParola.clear();
+    	this.txtTranslate.clear();
+    	
     }
 
     @FXML
     void doTranslate(ActionEvent event) {
+    	
     	String array[];
-    	array= this.txtParola.getText().toLowerCase().split(">");
+    	array= this.txtParola.getText().toLowerCase().split(" ");
     	
     	//devo restituire la traduzione
     	if(array.length==1) {
-    		this.txtTranslate.setText(dizionarioAlieno.get(array[0].split("<")[1]));
-    	}
-    	
+    		
+    		if(dizionarioAlieno.size()==0) {
+    			this.txtTranslate.setText("Il dizionario è ancora vuoto");
+    			return;
+    		}
+    		
+    		String parolaAl= array[0];
+    		String s=""; //per il risultato
+    		if(parolaAl.contains("?")==false) {
+    			//caso normale: stampo tutte le traduzioni per quella parola aliena
+    			for(String str: dizionarioAlieno.get(parolaAl)) {
+    				if(s!="")
+    					s+="\n";
+    				s+=str;
+    			}
+    			this.txtTranslate.setText(s);
+    			
+    		}else{
+    			//es: ALI?NO
+    			int i=0; //conto il numero di ?
+    			for(char c: parolaAl.toCharArray())
+    				if(c== '?')
+    					i++;	
+    			if(i>1)
+    				this.txtTranslate.setText("Mettere un solo '?' ");
+    			else {
+    				int j= parolaAl.indexOf('?'); //ricavo l'indice del '?'
+    				String prima= parolaAl.substring(0, j);
+    				String dopo=parolaAl.substring(j+1);
+    				//ora cerco tra le parole aliene che ho nel dizionario
+    				for(String str: dizionarioAlieno.keySet()) {
+    					//controllo che siano della stessa lunghezza
+    					if(str.length()== parolaAl.length()) {
+    						String a= str.substring(0, j);
+    						String b=str.substring(j+1);
+    						if(a.compareTo(prima)==0 && b.compareTo(dopo)==0) {
+    			    				if(s!="")
+    			    					s+="\n";
+    			    				s+="Parola aliena: "+ str+ " traduzione: "+dizionarioAlieno.get(str);
+    						}
+    						this.txtTranslate.setText(s);
+    					}
+    				}
+    			}
+    		}
+    	}	
+
     	//devo aggiungere la parola al dizionario
     	else if(array.length==2) {
     		
-    		String parolaAliena= array[0].split("<")[1]; //1 perchè alla posizione zero c'è lo spazio
-    		String traduzione= array[1].split("<")[1];
+    		String parolaAliena= array[0];
+    		String traduzione= array[1];
     		
     		for(char c: parolaAliena.toCharArray()) {
-				if(Character.isDigit(c))
-					checkNumero=true;
-			}
+    			if(Character.isDigit(c))
+    				checkNumero=true;
+    		}
     		for(char c: traduzione.toCharArray()) {
-				if(Character.isDigit(c))
-					checkNumero2=true;
-			}
+    			if(Character.isDigit(c))
+    				checkNumero2=true;
+    		}
     		
     		if(!checkNumero && !checkNumero2) {
-    			dizionarioAlieno.put(parolaAliena, traduzione);
+    			if(dizionarioAlieno.containsKey(parolaAliena)) {
+    				dizionarioAlieno.get(parolaAliena).add(traduzione);
+    			}else {
+    				LinkedList<String> trad= new LinkedList<String>();
+    				trad.add(traduzione);
+    				dizionarioAlieno.put(parolaAliena, trad);
+    			}
     			this.txtParola.clear();
     		}else {
     			this.txtTranslate.setText("Ammesse solo le lettere alfabetiche");
     		}
     		
     	}else {
-    		this.txtTranslate.setText("Non viene rispettato il pattern");
+    		this.txtTranslate.setText("Non viene rispettato il pattern <parolaAliena> <traduzione>");
     	}
 
     }
